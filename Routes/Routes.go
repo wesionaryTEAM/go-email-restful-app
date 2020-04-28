@@ -17,5 +17,9 @@ func SetupRouter() *gin.Engine {
 		grp1.PUT("user/:id", Controllers.UpdateUser)
 		grp1.DELETE("user/:id", Controllers.DeleteUser)
 	}
+	grp2 := r.Group("/email")
+	{
+		grp2.POST("send-email", Controllers.SendEmail)
+	}
 	return r
 }

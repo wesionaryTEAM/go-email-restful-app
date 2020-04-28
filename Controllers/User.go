@@ -4,8 +4,12 @@ import (
 	"first-api/Models"
 	"fmt"
 	"net/http"
+	"net/smtp"
+	"os"
+	
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 //GetUsers ... Get all users
@@ -72,3 +76,45 @@ func DeleteUser(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"id" + id: "is deleted"})
 	}
 }
+
+//Email ... Structure for email
+type Email struct {
+	EmailTo string `json:"email_to" binding:"required"`
+}
+
+//SendEmail ... Send the SendEmail
+func SendEmail(c *gin.Context) {
+	setEmailConfig("First Email", c)
+}
+
+func setEmailConfig(body string, c *gin.Context) {
+	envError := godotenv.Load()
+	if envError != nil {
+		fmt.Println("Error loading .env file")
+	}
+	var json Email
+	c.BindJSON(&json)
+	from := os.Getenv("EMAIL_FROM")
+	pass := os.Getenv("PASSWORD")
+	host := os.Getenv("EMAIL_HOST")
+	port := os.Getenv("EMAIL_PORT")
+	to := json.EmailTo
+
+	msg := "From: " + from + "\n" +
+		"To: " + to + "\n" +
+		"Subject: Hello there \n\n" +
+		body
+
+	err := smtp.SendMail(host + ":" + port,
+		smtp.PlainAuth("", from, pass, os.Getenv("EMAIL_HOST")),
+		from, []string{to}, []byte(msg))
+
+	if err != nil {
+		fmt.Println(err)
+		c.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+	fmt.Println("Email sent")
+	c.JSON(http.StatusOK, "Email has been sent")
+}
+
